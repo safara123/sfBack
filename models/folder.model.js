@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-require("./File.model.js");
-require("./Drawer.model.js");
+require("./file.model.js");
+require("./drawer.model.js");
 
 const Schema = mongoose.Schema;
 

@@ -1,7 +1,7 @@
 const object = require("@hapi/joi/lib/types/object.js");
 const { json } = require("express");
 const mongoose = require("mongoose");
-require("./Drawer.model.js");
+require("./drawer.model.js");
 
 const Schema = mongoose.Schema;
 

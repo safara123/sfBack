@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-require("./Folder.model.js");
-require("./User.model.js");
+require("./folder.model.js");
+require("./user.model.js");
 
 const Schema = mongoose.Schema;
 
