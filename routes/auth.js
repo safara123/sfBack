@@ -6,7 +6,7 @@ const VerifySupperAdminToken = require("../controllers/AuthController").verifySu
 const VerifyAdminToken =
   require("../controllers/AuthController").verifyAdminToken;
 
-let User = require("../models/User.model");
+let User = require("../models/user.model");
 
 //register User
 router.route("/register").post(async (req, res) => {

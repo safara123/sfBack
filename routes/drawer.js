@@ -2,8 +2,8 @@ const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 var verifySupperAdminToken = require("../controllers/AuthController").verifySupperAdminToken;
-let User = require("../models/User.model");
-let Drawer = require("../models/Drawer.model");
+let User = require("../models/user.model");
+let Drawer = require("../models/drawer.model");
 
 
 //supperadmin can add a new shulter

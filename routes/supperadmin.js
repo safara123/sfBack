@@ -3,10 +3,10 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 var verifySupperAdminToken = require("../controllers/AuthController").verifySupperAdminToken;
 
-let Folder = require("../models/Folder.model");
-let User = require("../models/User.model");
-let FileO = require("../models/File.model");
-let Drawer = require("../models/Drawer.model");
+let Folder = require("../models/folder.model");
+let User = require("../models/user.model");
+let FileO = require("../models/file.model");
+let Drawer = require("../models/drawer.model");
 
 
 
