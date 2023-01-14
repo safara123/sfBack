@@ -253,6 +253,9 @@ router.post("/inFolder", VerifyAdminToken, async function (req, res) {
             folder.lastDateIn = date_ob;
             folder.lastDateInUser = req.decoded.id;
             folder.save()
+                .then((folder) => {
+                    return res.send("Folder in");
+                })
                 .catch((err) => res.status(500).json({ message: 'err in save the last date in.' }));
         })
         .catch((err) => res.status(500).json({ message: 'err in find the folder.' }));
@@ -268,6 +271,9 @@ router.post("/inFile", VerifyAdminToken, async function (req, res) {
             file.lastDateIn = date_ob;
             file.lastDateInUser = req.decoded.id;
             file.save()
+                .then((file) => {
+                    return res.send("File in");
+                })
                 .catch((err) => res.status(500).json({ message: 'err in save the last date in.' }));
         })
         .catch((err) => res.status(500).json({ message: 'err in find the file.' }));
@@ -287,6 +293,9 @@ router.post("/outFolder", VerifyAdminToken, async function (req, res) {
                 folder.firstDateOutUser = req.decoded.id;
             }
             folder.save()
+                .then((folder) => {
+                    return res.send("Folder out");
+                })
                 .catch((err) => res.status(500).json({ message: 'err in save the last date out.' }));
         })
         .catch((err) => res.status(500).json({ message: 'err in find the folder.' }));
@@ -305,6 +314,9 @@ router.post("/outFile", VerifyAdminToken, async function (req, res) {
                 file.firstDateOutUser = req.decoded.id;
             }
             file.save()
+                .then((file) => {
+                    return res.send("File out");
+                })
                 .catch((err) => res.status(500).json({ message: 'err in save the last date out.' }));
         })
         .catch((err) => res.status(500).json({ message: 'err in find the file.' }));
