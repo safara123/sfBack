@@ -61,15 +61,6 @@ router.post(
     }
 );
 
-//get all users
-router.get("/getAllUsers",
-    VerifyAdminToken,
-    async function (req, res, next) {
-        await User.find()
-            .then((user) => res.json(user))
-            .catch((err) => res.status(400).json("Error: " + err));
-
-    });
 
 //get all users
 router.get("/getAllFolders",
@@ -123,6 +114,92 @@ router.get(
         });
     }
 );
+router.post(
+    "/changePassword",
+    VerifyAdminToken,
+    async function (req, res) {
+        const userId = req.body.userId;
+        const password = req.body.password;
+        //hashing the password the save it to user
+        bcrypt.hash(password, 10, function (err, hashedPass) {
+            if (err) {
+                res.json({
+                    error: err,
+                });
+            }
+            if (hashedPass) {
+                User.findById(userId)
+                    .then((user) => {
+                        user.password = hashedPass;
+                        user.save();
+                        res.send("password changed successfully!");
+                    })
+                    .catch((err) => res.status(400).send(err));
+            }
+        });
+    }
+);
+
+//get all users
+router.get("/getAllUsers",
+    VerifyAdminToken,
+    async function (req, res, next) {
+        await User.find({ rol: "user" })
+            .then((user) => res.json(user))
+            .catch((err) => res.status(400).json("Error: " + err));
+
+    });
+
+
+router.post('/deleteUser', VerifyAdminToken, async function (req, res, next) {
+    const userId = req.body.userId;
+    await User.findById(userId)
+        .then((user) => {
+            user.remove();
+            res.json("user deleted successfully")
+        })
+        .catch((err) => res.status(400).json("Error: " + err));
+
+})
+
+
+router.post('/deleteFolder', VerifyAdminToken, function (req, res, next) {
+    const folderId = req.body.folderId;
+    Folder.findById(folderId)
+        .then((folder) => {
+            folder.remove();
+            folder.json("folder deleted successfully")
+        })
+        .catch((err) => res.status(400).json("Error: " + err));
+})
+
+router.post('/deleteFile', VerifyAdminToken, function (req, res, next) {
+    const fileId = req.body.fileId;
+    FileO.findById(fileId)
+        .then((file) => {
+            file.remove();
+            file.json("file deleted successfully")
+        })
+        .catch((err) => res.status(400).json("Error: " + err));
+})
+
+router.get("/searchDrawers",
+    VerifyAdminToken, async (req, res) => {
+        const params = req.query;
+        let page = req.query.page;
+        let size = req.query.size;
+
+        if (page === undefined || size === undefined) {
+            page = 1;
+            size = 6;
+        }
+        const count = await Drawer.find({ name: { $regex: params.drawerName } }).count();
+        const result = await Drawer.find({ name: { $regex: params.drawerName } })
+            .populate("folders")
+            .populate("usersList")
+
+        res.json({ drawers: result, count: count });
+    });
 
 //get all the folders in data base by pagination
 router.get(
@@ -142,8 +219,13 @@ router.get(
             const limit = numOfDocs;
 
             FileO.find({ folderId: folderId })
-                .skip(page * size - size)
-                .limit(size)
+                .populate("folderId")
+                .populate("firstDateInUser")
+                .populate("firstDateOutUser")
+                .populate("lastDateInUser")
+                .populate("lastDateOutUser")
+                // .skip(page * size - size)
+                // .limit(size)
                 .then((file) => {
                     res.json({ file: file, count: limit });
                 })
@@ -161,7 +243,7 @@ router.post("/createFolder", VerifyAdminToken, async function (req, res) {
     const firstDateOut = null;
     const lastDateIn = date_ob;
     const lastDateOut = null;
-    const firstDateInUser = null;
+    const firstDateInUser = req.decoded.id;
     const firstDateOutUser = null;
     const lastDateInUser = null;
     const lastDateOutUser = null;
@@ -187,11 +269,11 @@ router.post("/createFolder", VerifyAdminToken, async function (req, res) {
                 d.folders.push(newFolder._id);
                 d.save()
                     .then(() => {
+                        res.send("Folder created successfully");
                     })
                     .catch((err) => res.status(500).json({ message: err }));
             })
                 .catch((err) => res.status(500).json({ message: err }));
-            return res.send("Folder created successfully");
         })
         .catch((err) => res.status(500).json({ message: err }));
 });
@@ -206,7 +288,7 @@ router.post("/createFile", VerifyAdminToken, async function (req, res) {
     const firstDateOut = null;
     const lastDateIn = date_ob;
     const lastDateOut = null;
-    const firstDateInUser = null;
+    const firstDateInUser = req.decoded.id;
     const firstDateOutUser = null;
     const lastDateInUser = null;
     const lastDateOutUser = null;
@@ -234,11 +316,10 @@ router.post("/createFile", VerifyAdminToken, async function (req, res) {
                 folder.files.push(newFile._id);
                 folder.save()
                     .then(() => {
+                        res.send("File created successfully");
                     })
                     .catch((err) => res.status(500).json({ message: err }));
             });
-
-            return res.send("File created successfully");
         })
         .catch((err) => res.status(500).json({ message: err }));
 });

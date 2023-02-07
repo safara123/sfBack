@@ -26,15 +26,34 @@ router.get(
             Drawer.find()
                 .populate("folders")
                 .populate("usersList")
-                .skip(page * size - size)
-                .limit(size)
+                // .skip(page * size - size)
+                // .limit(size)
                 .then((drawers) => {
+
                     res.json({ drawers: drawers, count: limit });
                 })
                 .catch((err) => res.status(400).json("Error: " + err));
         });
     }
 );
+
+router.get("/searchDrawers",
+    VerifyToken, async (req, res) => {
+        const params = req.query;
+        let page = req.query.page;
+        let size = req.query.size;
+
+        if (page === undefined || size === undefined) {
+            page = 1;
+            size = 6;
+        }
+        const count = await Drawer.find({ name: {$regex : params.drawerName} }).count();
+        const result = await Drawer.find({ name: {$regex : params.drawerName} })
+            .populate("folders")
+            .populate("usersList")
+
+        res.json({ drawers: result, count: count });
+    });
 
 //get all the folders in data base by pagination
 router.get(
@@ -54,8 +73,13 @@ router.get(
             const limit = numOfDocs;
 
             FileO.find({ folderId: folderId })
-                .skip(page * size - size)
-                .limit(size)
+                .populate("folderId")
+                .populate("firstDateInUser")
+                .populate("firstDateOutUser")
+                .populate("lastDateInUser")
+                .populate("lastDateOutUser")
+                // .skip(page * size - size)
+                // .limit(size)
                 .then((file) => {
                     res.json({ file: file, count: limit });
                 })
