@@ -72,19 +72,17 @@ router.get("/getAllFolders",
 
     });
 
-router.get("/searchFolders", VerifyAdminToken, async (req, res) => {
-    const params = req.query;
-    let page = req.query.page;
-    let size = req.query.size;
 
-    if (page === undefined || size === undefined) {
-        page = 1;
-        size = 6;
-    }
-    const count = await Folder.find({ folderName: params.folderName }).count();
-    const result = await Folder.find({ folderName: params.folderName })
-    res.json({ folders: result, count: count });
-});
+//get all users
+router.get("/getAllFiles",
+    VerifyAdminToken,
+    async function (req, res, next) {
+        await FileO.find()
+            .then((user) => res.json(user))
+            .catch((err) => res.status(400).json("Error: " + err));
+
+    });
+
 
 //get all the folders in data base by pagination
 router.get(
@@ -233,6 +231,78 @@ router.get(
         });
     }
 );
+
+
+router.get("/searchFiles", VerifyAdminToken, async (req, res) => {
+    const params = req.query;
+    let page = req.query.page;
+    let size = req.query.size;
+
+    if (page === undefined || size === undefined) {
+        page = 1;
+        size = 6;
+    }
+    const count = await FileO.find({ fileName: { $regex: params.fileName } }).count();
+    const result = await FileO.find({ fileName: { $regex: params.fileName } })
+
+    res.json({ files: result, count: count });
+});
+
+
+//get all the folders in data base by pagination
+router.get(
+    "/getFoldersPagination",
+    VerifyAdminToken,
+    async function (req, res) {
+        let page = req.query.page;
+        let size = req.query.size;
+        let drawerId = req.query.drawerId;
+
+        if (!drawerId) {
+            res.json({ folder: null });
+        }
+
+        if (page === undefined || size === undefined) {
+            page = 1;
+            size = 6;
+        }
+
+        Folder.count({}, function (error, numOfDocs) {
+            const limit = numOfDocs;
+
+            Folder.find({ drawer: drawerId })
+                .populate("drawer")
+                .populate("firstDateInUser")
+                .populate("firstDateOutUser")
+                .populate("lastDateInUser")
+                .populate("lastDateOutUser")
+                // .skip(page * size - size)
+                // .limit(size)
+                .then((folder) => {
+                    res.json({ folder: folder, count: limit });
+                })
+                .catch((err) => res.status(400).json("Error: " + err));
+        });
+    }
+);
+
+
+router.get("/searchFolders", VerifyAdminToken, async (req, res) => {
+    const params = req.query;
+    let page = req.query.page;
+    let size = req.query.size;
+
+    if (page === undefined || size === undefined) {
+        page = 1;
+        size = 6;
+    }
+    const count = await Folder.find({ folderName: { $regex: params.folderName } }).count();
+    const result = await Folder.find({ folderName: { $regex: params.folderName } })
+
+    res.json({ folders: result, count: count });
+});
+
+
 
 //admin can add a new folder
 router.post("/createFolder", VerifyAdminToken, async function (req, res) {

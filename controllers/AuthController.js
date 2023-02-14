@@ -55,3 +55,13 @@ exports.verifySupperAdminToken = function (req, res, next) {
   }
   return true;
 };
+
+
+exports.includeInList = function (list, id) {
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].id === id) {
+      return true;
+    }
+  }
+  return false;
+}

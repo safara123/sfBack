@@ -9,6 +9,8 @@ const supperadminRouter = require("./routes/supperadmin");
 const adminRouter = require("./routes/admin");
 const userRouter = require("./routes/user");
 
+// https://safr.herokuapp.com
+// http://localhost:3000
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -39,8 +41,6 @@ app.use("/supperadmin", supperadminRouter);
 app.use("/admin", adminRouter);
 app.use("/user", userRouter);
 
-// app.use("/courses", courseRouter);
-// app.use("/grades", gradeRouter);
 
 app.listen(port, () => {
   console.log(`Server is running at port ${port}`);
