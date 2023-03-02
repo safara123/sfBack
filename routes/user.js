@@ -124,7 +124,7 @@ router.get(
         FileO.count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
-            FileO.find({ folderId: folderId })
+            FileO.find()
                 .populate("folderId")
                 .populate("firstDateInUser")
                 .populate("firstDateOutUser")
@@ -280,6 +280,25 @@ router.get(
 
         if (!drawerId) {
             res.json({ folder: null });
+        }
+        if (drawerId == "folders") {
+            Folder.count({}, function (error, numOfDocs) {
+                const limit = numOfDocs;
+    
+                Folder.find()
+                    .populate("drawer")
+                    .populate("firstDateInUser")
+                    .populate("firstDateOutUser")
+                    .populate("lastDateInUser")
+                    .populate("lastDateOutUser")
+                    // .skip(page * size - size)
+                    // .limit(size)
+                    .then((folder) => {
+                        res.json({ folder: folder, count: limit });
+                    })
+                    .catch((err) => res.status(400).json("Error: " + err));
+            });
+            return;
         }
 
         if (page === undefined || size === undefined) {

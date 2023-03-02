@@ -212,7 +212,25 @@ router.get(
             page = 1;
             size = 6;
         }
+        if (folderId === "files") {
+            FileO.count({}, function (error, numOfDocs) {
+                const limit = numOfDocs;
 
+                FileO.find()
+                    .populate("folderId")
+                    .populate("firstDateInUser")
+                    .populate("firstDateOutUser")
+                    .populate("lastDateInUser")
+                    .populate("lastDateOutUser")
+                    // .skip(page * size - size)
+                    // .limit(size)
+                    .then((file) => {
+                        res.json({ file: file, count: limit });
+                    })
+                    .catch((err) => res.status(400).json("Error: " + err));
+            });
+            return;
+        }
         FileO.count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
@@ -260,6 +278,25 @@ router.get(
 
         if (!drawerId) {
             res.json({ folder: null });
+        }
+        if (drawerId == "folders") {
+            Folder.count({}, function (error, numOfDocs) {
+                const limit = numOfDocs;
+
+                Folder.find()
+                    .populate("drawer")
+                    .populate("firstDateInUser")
+                    .populate("firstDateOutUser")
+                    .populate("lastDateInUser")
+                    .populate("lastDateOutUser")
+                    // .skip(page * size - size)
+                    // .limit(size)
+                    .then((folder) => {
+                        res.json({ folder: folder, count: limit });
+                    })
+                    .catch((err) => res.status(400).json("Error: " + err));
+            });
+            return;
         }
 
         if (page === undefined || size === undefined) {
