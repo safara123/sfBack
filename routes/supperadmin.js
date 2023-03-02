@@ -492,15 +492,16 @@ router.post("/createDrawers", verifySupperAdminToken, async function (req, res) 
     const name = req.body.name;
     const shulter = req.body.shulter;
     const closet = req.body.closet;
+    const drawerNumber = req.body.drawerNumber;
 
 
     // add new drawer
     const newDrawer = new Drawer({
         name,
         shulter,
-        closet
+        closet,
+        drawerNumber
     });
-
     newDrawer
         .save()
         .then(() => {

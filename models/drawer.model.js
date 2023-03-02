@@ -15,6 +15,9 @@ const drawerSchema = new Schema(
         closet: {
             type: String,
         },
+        drawerNumber: {
+            type: String,
+        },
         folders: [{ type: Schema.Types.ObjectId, ref: "Folder" }],
         usersList: [{ type: Schema.Types.ObjectId, ref: "User" }],
     },
