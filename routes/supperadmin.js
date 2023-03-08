@@ -145,6 +145,17 @@ router.post('/deleteUser', verifySupperAdminToken, async function (req, res, nex
 
 })
 
+router.post('/deleteDrawer', verifySupperAdminToken, async function (req, res, next) {
+    const drawerId = req.body.drawerId;
+    await Drawer.findById(drawerId)
+        .then((drawer) => {
+            drawer.remove();
+            res.json("drawer deleted successfully")
+        })
+        .catch((err) => res.status(400).json("Error: " + err));
+
+})
+
 
 router.post('/deleteFolder', verifySupperAdminToken, function (req, res, next) {
     const folderId = req.body.folderId;

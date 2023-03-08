@@ -21,6 +21,17 @@ router.get("/getAllFolders",
     });
 
 
+router.post('/deleteDrawer', VerifyToken, async function (req, res, next) {
+    const drawerId = req.body.drawerId;
+    await Drawer.findById(drawerId)
+        .then((drawer) => {
+            drawer.remove();
+            res.json("drawer deleted successfully")
+        })
+        .catch((err) => res.status(400).json("Error: " + err));
+
+})
+
 router.post('/deleteFolder', VerifyToken, function (req, res, next) {
     const folderId = req.body.folderId;
     Folder.findById(folderId)
@@ -284,7 +295,7 @@ router.get(
         if (drawerId == "folders") {
             Folder.count({}, function (error, numOfDocs) {
                 const limit = numOfDocs;
-    
+
                 Folder.find()
                     .populate("drawer")
                     .populate("firstDateInUser")
