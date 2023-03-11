@@ -12,6 +12,9 @@ const fileSchema = new Schema(
     color: {
       type: String,
     },
+    attachment: {
+      type: String,      
+    },
     firstDateIn: {
       type: Date,
     },

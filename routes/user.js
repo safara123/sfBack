@@ -218,6 +218,7 @@ router.post("/createFile", VerifyToken, async function (req, res) {
     const fileName = req.body.fileName;
     const folderId = req.body.folderId;
     const color = req.body.color;
+    const attachment = req.body.attachment;
     let date_ob = new Date();
     const firstDateIn = date_ob;
     const firstDateOut = null;
@@ -233,6 +234,7 @@ router.post("/createFile", VerifyToken, async function (req, res) {
     const newFile = new FileO({
         fileName,
         color,
+        attachment,
         firstDateIn,
         firstDateInUser,
         firstDateOut,
