@@ -444,6 +444,49 @@ router.post("/createFile", VerifyAdminToken, async function (req, res) {
         .catch((err) => res.status(500).json({ message: err }));
 });
 
+router.post("/editDrawerName", VerifyAdminToken, async function (req, res) {
+    const name = req.body.name;
+    const drawerId = req.body.drawerId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.name = name;
+        drawer.save()
+            .then(() => {
+                return res.send("drawer name edited successfully");
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    });
+});
+
+router.post("/editFolderName", VerifyAdminToken, async function (req, res) {
+    const name = req.body.name;
+    const folderId = req.body.folderId;
+
+    Folder.findById(folderId).then((folder) => {
+        folder.folderName = name;
+        folder.save()
+            .then(() => {
+                return res.send("folder name edited successfully");
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    });
+});
+
+router.post("/editFileName", VerifyAdminToken, async function (req, res) {
+    const name = req.body.name;
+    const fileId = req.body.fileId;
+
+    FileO.findById(fileId).then((file) => {
+        file.fileName = name;
+        file.save()
+            .then(() => {
+                return res.send("file name edited successfully");
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    });
+});
+
+
 //when user click in on the folder
 router.post("/inFolder", VerifyAdminToken, async function (req, res) {
     const folderId = req.body.folderId;
