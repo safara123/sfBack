@@ -202,8 +202,8 @@ router.get("/searchDrawers",
             page = 1;
             size = 6;
         }
-        const count = await Drawer.find({ name: { $regex: params.drawerName } }).count();
-        const result = await Drawer.find({ name: { $regex: params.drawerName } })
+        const count = await Drawer.find({ name: { $regex: params.drawerName, $options: 'i' } }).count();
+        const result = await Drawer.find({ name: { $regex: params.drawerName, $options: 'i' } })
             .populate("folders")
             .populate("usersList")
 
@@ -218,10 +218,12 @@ router.get(
         let page = req.query.page;
         let size = req.query.size;
         let folderId = req.query.folderId;
-
         if (page === undefined || size === undefined) {
             page = 1;
             size = 6;
+        }
+        if (!folderId) {
+            res.json({ file: null });
         }
         if (folderId === "files") {
             FileO.count({}, function (error, numOfDocs) {
@@ -233,8 +235,8 @@ router.get(
                     .populate("firstDateOutUser")
                     .populate("lastDateInUser")
                     .populate("lastDateOutUser")
-                    // .skip(page * size - size)
-                    // .limit(size)
+                    .skip(page * size - size)
+                    .limit(size)
                     .then((file) => {
                         res.json({ file: file, count: limit });
                     })
@@ -242,6 +244,7 @@ router.get(
             });
             return;
         }
+
         FileO.count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
@@ -251,8 +254,8 @@ router.get(
                 .populate("firstDateOutUser")
                 .populate("lastDateInUser")
                 .populate("lastDateOutUser")
-                // .skip(page * size - size)
-                // .limit(size)
+                .skip(page * size - size)
+                .limit(size)
                 .then((file) => {
                     res.json({ file: file, count: limit });
                 })
@@ -266,13 +269,25 @@ router.get("/searchFiles", VerifyAdminToken, async (req, res) => {
     const params = req.query;
     let page = req.query.page;
     let size = req.query.size;
-
+    let folderId = req.query.folderId;
     if (page === undefined || size === undefined) {
         page = 1;
         size = 6;
     }
-    const count = await FileO.find({ fileName: { $regex: params.fileName } }).count();
-    const result = await FileO.find({ fileName: { $regex: params.fileName } })
+    if (folderId === "files") {
+        const count = await FileO.find({ fileName: { $regex: params.fileName, $options: 'i' } }).count();
+        const result = await FileO.find({ fileName: { $regex: params.fileName, $options: 'i' } })
+            .skip(page * size - size)
+            .limit(size)
+
+        res.json({ files: result, count: count });
+        return;
+    }
+
+    const count = await FileO.find({ $and: [{ folderId: folderId }, { fileName: { $regex: params.fileName, $options: 'i' } }] }).count();
+    const result = await FileO.find({ $and: [{ folderId: folderId }, { fileName: { $regex: params.fileName, $options: 'i' } }] })
+        .skip(page * size - size)
+        .limit(size)
 
     res.json({ files: result, count: count });
 });
@@ -300,8 +315,8 @@ router.get(
                     .populate("firstDateOutUser")
                     .populate("lastDateInUser")
                     .populate("lastDateOutUser")
-                    // .skip(page * size - size)
-                    // .limit(size)
+                    .skip(page * size - size)
+                    .limit(size)
                     .then((folder) => {
                         res.json({ folder: folder, count: limit });
                     })
@@ -314,7 +329,6 @@ router.get(
             page = 1;
             size = 6;
         }
-
         Folder.count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
@@ -324,8 +338,8 @@ router.get(
                 .populate("firstDateOutUser")
                 .populate("lastDateInUser")
                 .populate("lastDateOutUser")
-                // .skip(page * size - size)
-                // .limit(size)
+                .skip(page * size - size)
+                .limit(size)
                 .then((folder) => {
                     res.json({ folder: folder, count: limit });
                 })
@@ -339,14 +353,25 @@ router.get("/searchFolders", VerifyAdminToken, async (req, res) => {
     const params = req.query;
     let page = req.query.page;
     let size = req.query.size;
+    let drawerId = req.query.drawerId;
 
     if (page === undefined || size === undefined) {
         page = 1;
         size = 6;
     }
-    const count = await Folder.find({ folderName: { $regex: params.folderName } }).count();
-    const result = await Folder.find({ folderName: { $regex: params.folderName } })
+    if (drawerId == "folders") {
+        const count = await Folder.find({ folderName: { $regex: params.folderName, $options: 'i' } }).count();
+        const result = await Folder.find({ folderName: { $regex: params.folderName, $options: 'i' } })
+            .skip(page * size - size)
+            .limit(size)
+        res.json({ folders: result, count: count });
+        return;
+    }
 
+    const count = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] }).count();
+    const result = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] })
+        .skip(page * size - size)
+        .limit(size)
     res.json({ folders: result, count: count });
 });
 
@@ -401,7 +426,7 @@ router.post("/createFile", VerifyAdminToken, async function (req, res) {
     const fileName = req.body.fileName;
     const folderId = req.body.folderId;
     const color = req.body.color;
-    const attachment= req.body.attachment;
+    const attachment = req.body.attachment;
     let date_ob = new Date();
     const firstDateIn = date_ob;
     const firstDateOut = null;
@@ -618,6 +643,67 @@ router.post("/addUsersToDrawer", VerifyAdminToken, async function (req, res) {
     })
         .catch((err) => res.status(500).json({ message: err }));
 });
+router.get("/getAllDrawersForUser",
+    VerifyAdminToken,
+    async function (req, res, next) {
+        const params = req.query;
+        const userId = params.userId;
+        await User.findById(userId)
+            .populate("drawersAccess")
+            .then((user) => {
+                res.json(user.drawersAccess)
+            })
+            .catch((err) => res.status(400).json("Error: " + err));
+    });
+
+//supperadmin can add a users to drawer
+router.post("/addOneUserToDrawer", VerifyAdminToken, async function (req, res) {
+    const drawerId = req.body.drawerId;
+    const userId = req.body.userId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.usersList.push(userId);
+        drawer.save()
+            .then(() => {
+                User.findById(userId).then((user) => {
+                    user.drawersAccess.push(drawerId);
+                    user.save()
+                        .then(() => {
+                        })
+                        .catch((err) => res.status(500).json({ message: err }));
+                });
+
+                return res.send("users have access to this drawer now");
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    })
+        .catch((err) => res.status(500).json({ message: err }));
+});
+
+//supperadmin can add a users to drawer
+router.post("/addOneUserToDrawer", VerifyAdminToken, async function (req, res) {
+    const drawerId = req.body.drawerId;
+    const userId = req.body.userId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.usersList.push(userId);
+        drawer.save()
+            .then(() => {
+                User.findById(userId).then((user) => {
+                    user.drawersAccess.push(drawerId);
+                    user.save()
+                        .then(() => {
+                        })
+                        .catch((err) => res.status(500).json({ message: err }));
+                });
+
+                return res.send("users have access to this drawer now");
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    })
+        .catch((err) => res.status(500).json({ message: err }));
+});
+
 
 
 //get all drawers

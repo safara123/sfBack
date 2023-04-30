@@ -87,6 +87,18 @@ router.post(
         });
     }
 );
+router.get("/getAllDrawersForUser",
+    verifySupperAdminToken,
+    async function (req, res, next) {
+        const params = req.query;
+        const userId = params.userId;
+        await User.findById(userId)
+            .populate("drawersAccess")
+            .then((user) => {
+                res.json(user.drawersAccess)
+            })
+            .catch((err) => res.status(400).json("Error: " + err));
+    });
 
 //get all users
 router.get("/getAllUsers",
@@ -108,6 +120,7 @@ router.get("/getAllFolders",
             .catch((err) => res.status(400).json("Error: " + err));
 
     });
+
 
 //get all users
 router.get("/getAllFiles",
@@ -216,8 +229,8 @@ router.get("/searchDrawers",
             page = 1;
             size = 6;
         }
-        const count = await Drawer.find({ name: { $regex: params.drawerName } }).count();
-        const result = await Drawer.find({ name: { $regex: params.drawerName } })
+        const count = await Drawer.find({ name: { $regex: params.drawerName, $options: 'i' } }).count();
+        const result = await Drawer.find({ name: { $regex: params.drawerName, $options: 'i' } })
             .populate("folders")
             .populate("usersList")
 
@@ -247,8 +260,8 @@ router.get(
                     .populate("firstDateOutUser")
                     .populate("lastDateInUser")
                     .populate("lastDateOutUser")
-                    // .skip(page * size - size)
-                    // .limit(size)
+                    .skip(page * size - size)
+                    .limit(size)
                     .then((folder) => {
                         res.json({ folder: folder, count: limit });
                     })
@@ -261,7 +274,6 @@ router.get(
             page = 1;
             size = 6;
         }
-
         Folder.count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
@@ -271,8 +283,8 @@ router.get(
                 .populate("firstDateOutUser")
                 .populate("lastDateInUser")
                 .populate("lastDateOutUser")
-                // .skip(page * size - size)
-                // .limit(size)
+                .skip(page * size - size)
+                .limit(size)
                 .then((folder) => {
                     res.json({ folder: folder, count: limit });
                 })
@@ -280,23 +292,31 @@ router.get(
         });
     }
 );
-
-
 router.get("/searchFolders", verifySupperAdminToken, async (req, res) => {
     const params = req.query;
     let page = req.query.page;
     let size = req.query.size;
+    let drawerId = req.query.drawerId;
 
     if (page === undefined || size === undefined) {
         page = 1;
         size = 6;
     }
-    const count = await Folder.find({ folderName: { $regex: params.folderName } }).count();
-    const result = await Folder.find({ folderName: { $regex: params.folderName } })
+    if (drawerId == "folders") {
+        const count = await Folder.find({ folderName: { $regex: params.folderName, $options: 'i' } }).count();
+        const result = await Folder.find({ folderName: { $regex: params.folderName, $options: 'i' } })
+            .skip(page * size - size)
+            .limit(size)
+        res.json({ folders: result, count: count });
+        return;
+    }
 
+    const count = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] }).count();
+    const result = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] })
+        .skip(page * size - size)
+        .limit(size)
     res.json({ folders: result, count: count });
 });
-
 //get all the folders in data base by pagination
 router.get(
     "/getFilesPagination",
@@ -309,6 +329,9 @@ router.get(
             page = 1;
             size = 6;
         }
+        if (!folderId) {
+            res.json({ file: null });
+        }
         if (folderId === "files") {
             FileO.count({}, function (error, numOfDocs) {
                 const limit = numOfDocs;
@@ -319,8 +342,8 @@ router.get(
                     .populate("firstDateOutUser")
                     .populate("lastDateInUser")
                     .populate("lastDateOutUser")
-                    // .skip(page * size - size)
-                    // .limit(size)
+                    .skip(page * size - size)
+                    .limit(size)
                     .then((file) => {
                         res.json({ file: file, count: limit });
                     })
@@ -338,8 +361,8 @@ router.get(
                 .populate("firstDateOutUser")
                 .populate("lastDateInUser")
                 .populate("lastDateOutUser")
-                // .skip(page * size - size)
-                // .limit(size)
+                .skip(page * size - size)
+                .limit(size)
                 .then((file) => {
                     res.json({ file: file, count: limit });
                 })
@@ -347,19 +370,30 @@ router.get(
         });
     }
 );
-
-
 router.get("/searchFiles", verifySupperAdminToken, async (req, res) => {
     const params = req.query;
     let page = req.query.page;
     let size = req.query.size;
-
+    let folderId = req.query.folderId;
     if (page === undefined || size === undefined) {
         page = 1;
         size = 6;
     }
-    const count = await FileO.find({ fileName: { $regex: params.fileName } }).count();
-    const result = await FileO.find({ fileName: { $regex: params.fileName } })
+    if (folderId === "files") {
+        const count = await FileO.find({ fileName: { $regex: params.fileName, $options: 'i' } }).count();
+        const result = await FileO.find({ fileName: { $regex: params.fileName, $options: 'i' } })
+            .skip(page * size - size)
+            .limit(size)
+
+        res.json({ files: result, count: count });
+        return;
+    }
+
+    const count = await FileO.find({ $and: [{ folderId: folderId }, { fileName: { $regex: params.fileName, $options: 'i' } }] }).count();
+    const result = await FileO.find({ $and: [{ folderId: folderId }, { fileName: { $regex: params.fileName, $options: 'i' } }] })
+        .skip(page * size - size)
+        .limit(size)
+
     res.json({ files: result, count: count });
 });
 
@@ -630,6 +664,54 @@ router.post("/addUsersToDrawer", verifySupperAdminToken, async function (req, re
 });
 
 
+//supperadmin can add a users to drawer
+router.post("/addOneUserToDrawer", verifySupperAdminToken, async function (req, res) {
+    const drawerId = req.body.drawerId;
+    const userId = req.body.userId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.usersList.push(userId);
+        drawer.save()
+            .then(() => {
+                User.findById(userId).then((user) => {
+                    user.drawersAccess.push(drawerId);
+                    user.save()
+                        .then(() => {
+                        })
+                        .catch((err) => res.status(500).json({ message: err }));
+                });
+
+                return res.send("users have access to this drawer now");
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    })
+        .catch((err) => res.status(500).json({ message: err }));
+});
+
+
+//admin can delete the product
+router.get('/deleteSingleUserAccess', verifySupperAdminToken, async function (req, res, next) {
+    const drawerId = req.query.drawerId;
+    const userId = req.query.userId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        const index = drawer.usersList.indexOf(userId);
+        drawer.usersList.splice(index, 1);
+        drawer.save()
+            .then(() => {
+                User.findById(userId).then((user) => {
+                    const drawerIndex = user.drawersAccess.indexOf(drawerId);
+                    user.drawersAccess.splice(drawerIndex, 1);
+                    user.save()
+                        .then(() => {
+                            return res.send("user access to drawer deleted!");
+                        })
+                        .catch((err) => res.status(500).json({ message: err }));
+                })
+            })
+            .catch((err) => res.status(500).json({ message: err }));
+    })
+})
 
 //get all drawers
 router.get("/getAllDrawers",
