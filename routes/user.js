@@ -67,24 +67,23 @@ router.get(
         }
 
         Drawer.count({}, function (error, numOfDocs) {
-            var limit = numOfDocs;
-
+            let limit = numOfDocs;
+            let count = 0;
             Drawer.find()
                 .populate("folders")
                 .populate("usersList")
-                .skip(page * size - size)
-                .limit(size)
                 .then((drawers) => {
                     let userDrawers = []
                     drawers.forEach((drawer) => {
                         if (includeInList(drawer.usersList, req.decoded.id)) {
                             userDrawers.push(drawer);
+                            count = count + 1
                         }
                         else {
                             limit = limit - 1;
                         }
                     })
-                    res.json({ drawers: userDrawers, count: limit });
+                    res.json({ drawers: userDrawers, count: count });
                 })
                 .catch((err) => res.status(400).json("Error: " + err));
         });
@@ -112,7 +111,7 @@ router.get("/searchDrawers",
                 userDrawers.push(drawer);
             }
             else {
-                    count = count - 1;
+                count = count - 1;
             }
         })
         res.json({ drawers: userDrawers, count: count });
