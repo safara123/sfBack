@@ -66,10 +66,11 @@ router.post(
 router.get("/getAllFolders",
     VerifyAdminToken,
     async function (req, res, next) {
-        await Folder.find()
+        const drawerId = req.query.drawerId;
+        await Folder.find({ drawer: drawerId })
+            .populate("drawer")
             .then((user) => res.json(user))
             .catch((err) => res.status(400).json("Error: " + err));
-
     });
 
 
