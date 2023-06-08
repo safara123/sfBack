@@ -599,15 +599,16 @@ router.post("/createDrawers", verifySupperAdminToken, async function (req, res) 
 router.post("/editDrawerName", verifySupperAdminToken, async function (req, res) {
     const name = req.body.name;
     const drawerId = req.body.drawerId;
-    console.log('drawerId');
-    console.log(drawerId);
-    console.log('name');
-    console.log(name);
 
     Drawer.findById(drawerId).then((drawer) => {
         drawer.name = name;
         drawer.save()
             .then(() => {
+                console.log('drawerId');
+                console.log(drawerId);
+                console.log('name');
+                console.log(name);
+            
                 return res.send("drawer name edited successfully");
             })
             .catch((err) => res.status(500).json({ message: err }));
