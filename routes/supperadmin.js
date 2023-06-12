@@ -602,20 +602,11 @@ router.post("/editDrawerName", verifySupperAdminToken, async function (req, res)
 
     Drawer.findById(drawerId).then((drawer) => {
         drawer.name = name;
-        console.log('drawerId');
-        console.log(drawerId);
-        console.log('name');
-        console.log(name);    
         drawer.save()
             .then(() => {
-                console.log('drawerId1');
-                console.log(drawerId);
-                console.log('name1');
-                console.log(name);
-            
                 return res.send("drawer name edited successfully");
             })
-            .catch((err) => res.status(500).json({ message: err }));
+            .catch((err) => res.status(200).json({ message: err }));
     });
 });
 

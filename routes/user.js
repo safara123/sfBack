@@ -13,11 +13,11 @@ let Drawer = require("../models/drawer.model");
 router.get("/getAllFolders",
     VerifyToken,
     async function (req, res, next) {
-        await Folder.find()
+        const drawerId = req.query.drawerId;
+        await Folder.find({ drawer: drawerId })
             .populate("drawer")
             .then((user) => res.json(user))
             .catch((err) => res.status(400).json("Error: " + err));
-
     });
 
 
