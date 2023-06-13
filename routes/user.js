@@ -356,6 +356,20 @@ router.get("/getAllDrawers",
 
     });
 
+router.post("/editDrawerNumber", VerifyToken, async function (req, res) {
+    const drawerNumber = req.body.drawerNumber;
+    const drawerId = req.body.drawerId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.drawerNumber = drawerNumber;
+        drawer.save()
+            .then(() => {
+                return res.send("drawer number edited successfully");
+            })
+            .catch((err) => res.status(200).json({ message: err }));
+    });
+});
+
 //get all the folders in data base by pagination
 router.get(
     "/getFoldersPagination",
@@ -392,7 +406,7 @@ router.get(
             page = 1;
             size = 6;
         }
-        Folder.count({}, function (error, numOfDocs) {
+        Folder.find({ drawer: drawerId }).count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
             Folder.find({ drawer: drawerId })

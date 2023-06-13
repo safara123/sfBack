@@ -330,7 +330,7 @@ router.get(
             page = 1;
             size = 6;
         }
-        Folder.count({}, function (error, numOfDocs) {
+        Folder.find({ drawer: drawerId }).count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
             Folder.find({ drawer: drawerId })
@@ -348,6 +348,20 @@ router.get(
         });
     }
 );
+
+router.post("/editDrawerNumber", VerifyAdminToken, async function (req, res) {
+    const drawerNumber = req.body.drawerNumber;
+    const drawerId = req.body.drawerId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.drawerNumber = drawerNumber;
+        drawer.save()
+            .then(() => {
+                return res.send("drawer number edited successfully");
+            })
+            .catch((err) => res.status(200).json({ message: err }));
+    });
+});
 
 
 router.get("/searchFolders", VerifyAdminToken, async (req, res) => {

@@ -275,7 +275,7 @@ router.get(
             page = 1;
             size = 6;
         }
-        Folder.count({}, function (error, numOfDocs) {
+        Folder.find({ drawer: drawerId }).count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
             Folder.find({ drawer: drawerId })
@@ -605,6 +605,20 @@ router.post("/editDrawerName", verifySupperAdminToken, async function (req, res)
         drawer.save()
             .then(() => {
                 return res.send("drawer name edited successfully");
+            })
+            .catch((err) => res.status(200).json({ message: err }));
+    });
+});
+
+router.post("/editDrawerNumber", verifySupperAdminToken, async function (req, res) {
+    const drawerNumber = req.body.drawerNumber;
+    const drawerId = req.body.drawerId;
+
+    Drawer.findById(drawerId).then((drawer) => {
+        drawer.drawerNumber = drawerNumber;
+        drawer.save()
+            .then(() => {
+                return res.send("drawer number edited successfully");
             })
             .catch((err) => res.status(200).json({ message: err }));
     });
