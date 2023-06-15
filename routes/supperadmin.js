@@ -353,7 +353,7 @@ router.get(
             return;
         }
 
-        FileO.count({}, function (error, numOfDocs) {
+        FileO.find({ folderId: folderId }).count({}, function (error, numOfDocs) {
             const limit = numOfDocs;
 
             FileO.find({ folderId: folderId })
