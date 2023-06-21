@@ -119,12 +119,127 @@ router.get("/searchDrawers",
 
 //get all the folders in data base by pagination
 router.get(
+    "/getFoldersPagination",
+    VerifyToken,
+    async function (req, res) {
+        let page = req.query.page;
+        let size = req.query.size;
+        let drawerId = req.query.drawerId;
+        let userId = req.decoded.id;
+
+        if (!drawerId) {
+            res.json({ folder: null });
+        }
+        if (drawerId == "folders") {
+            User.findById(userId)
+                .populate("drawersAccess")
+                .then((users) => {
+                    let foldersList = [];
+                    users.drawersAccess.map((drawer) => {
+                        foldersList.push(...drawer.folders);
+                    })
+
+                    Folder.find({ _id: { $in: foldersList } })
+                        .count({}, function (error, numOfDocs) {
+                            const limit1 = numOfDocs;
+                            Folder.find({ _id: { $in: foldersList } })
+                                .populate("drawer")
+                                .populate("firstDateInUser")
+                                .populate("firstDateOutUser")
+                                .populate("lastDateInUser")
+                                .populate("lastDateOutUser")
+                                .then((folders) => {
+                                    res.json({ folder: folders, count: limit1 });
+                                })
+                                .catch((err) => res.status(500).json("Error: " + err));
+                        });
+                })
+                .catch((err) => res.status(400).json("Error: " + err));
+            return;
+        }
+
+        if (page === undefined || size === undefined) {
+            page = 1;
+            size = 6;
+        }
+        Folder.find({ drawer: drawerId }).count({}, function (error, numOfDocs) {
+            const limit = numOfDocs;
+
+            Folder.find({ drawer: drawerId })
+                .populate("drawer")
+                .populate("firstDateInUser")
+                .populate("firstDateOutUser")
+                .populate("lastDateInUser")
+                .populate("lastDateOutUser")
+                .skip(page * size - size)
+                .limit(size)
+                .then((folder) => {
+                    res.json({ folder: folder, count: limit });
+                })
+                .catch((err) => res.status(400).json("Error: " + err));
+        });
+
+    }
+);
+
+
+router.get("/searchFolders", VerifyToken, async (req, res) => {
+    const params = req.query;
+    let page = req.query.page;
+    let size = req.query.size;
+    let drawerId = req.query.drawerId;
+    let userId = req.decoded.id;
+
+    if (page === undefined || size === undefined) {
+        page = 1;
+        size = 6;
+    }
+    if (drawerId == "folders") {
+        User.findById(userId)
+            .populate("drawersAccess")
+            .then((users) => {
+                let foldersList = [];
+                users.drawersAccess.map((drawer) => {
+                    foldersList.push(...drawer.folders);
+                })
+
+                Folder.find({ _id: { $in: foldersList }, folderName: { $regex: params.folderName, $options: 'i' } })
+                    .count({}, function (error, numOfDocs) {
+                        const limit1 = numOfDocs;
+                        Folder.find({ _id: { $in: foldersList }, folderName: { $regex: params.folderName, $options: 'i' } })
+                            .populate("drawer")
+                            .populate("firstDateInUser")
+                            .populate("firstDateOutUser")
+                            .populate("lastDateInUser")
+                            .populate("lastDateOutUser")
+                            .then((folders) => {
+                                res.json({ folders: folders, count: limit1 });
+                            })
+                            .catch((err) => res.status(500).json("Error: " + err));
+                    });
+            })
+            .catch((err) => res.status(400).json("Error: " + err));
+
+        return;
+    }
+    const count = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] }).count();
+    const result = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] })
+        .skip(page * size - size)
+        .limit(size)
+    res.json({ folders: result, count: count });
+});
+
+
+//get all the folders in data base by pagination
+router.get(
     "/getFilesPagination",
     VerifyToken,
     async function (req, res) {
         let page = req.query.page;
         let size = req.query.size;
         let folderId = req.query.folderId;
+        let userId = req.decoded.id;
+
         if (page === undefined || size === undefined) {
             page = 1;
             size = 6;
@@ -133,22 +248,31 @@ router.get(
             res.json({ file: null });
         }
         if (folderId === "files") {
-            FileO.count({}, function (error, numOfDocs) {
-                const limit = numOfDocs;
-
-                FileO.find()
-                    .populate("folderId")
-                    .populate("firstDateInUser")
-                    .populate("firstDateOutUser")
-                    .populate("lastDateInUser")
-                    .populate("lastDateOutUser")
-                    .skip(page * size - size)
-                    .limit(size)
-                    .then((file) => {
-                        res.json({ file: file, count: limit });
+            User.findById(userId)
+                .populate("drawersAccess")
+                .then((users) => {
+                    let foldersList = [];
+                    users.drawersAccess.map((drawer) => {
+                        foldersList.push(...drawer.folders);
                     })
-                    .catch((err) => res.status(400).json("Error: " + err));
-            });
+
+                    Folder.find({ _id: { $in: foldersList } })
+                        .count({}, function (error, numOfDocs) {
+                            const limit1 = numOfDocs;
+                            Folder.find({ _id: { $in: foldersList } })
+                                .populate("files")
+                                .then((folders) => {
+                                    let filesList = [];
+                                    folders.map((folder) => {
+                                        filesList.push(...folder.files);
+                                    })
+                                    res.json({ file: filesList, count: filesList.length });
+                                })
+                                .catch((err) => res.status(500).json("Error: " + err));
+                        });
+                })
+                .catch((err) => res.status(400).json("Error: " + err));
+
             return;
         }
 
@@ -177,17 +301,43 @@ router.get("/searchFiles", VerifyToken, async (req, res) => {
     let page = req.query.page;
     let size = req.query.size;
     let folderId = req.query.folderId;
+    let userId = req.decoded.id;
+
     if (page === undefined || size === undefined) {
         page = 1;
         size = 6;
     }
     if (folderId === "files") {
-        const count = await FileO.find({ fileName: { $regex: params.fileName, $options: 'i' } }).count();
-        const result = await FileO.find({ fileName: { $regex: params.fileName, $options: 'i' } })
-            .skip(page * size - size)
-            .limit(size)
+        User.findById(userId)
+            .populate("drawersAccess")
+            .then((users) => {
+                let foldersList = [];
+                users.drawersAccess.map((drawer) => {
+                    foldersList.push(...drawer.folders);
+                })
 
-        res.json({ files: result, count: count });
+                Folder.find({ _id: { $in: foldersList } })
+                    .count({}, function (error, numOfDocs) {
+                        const limit1 = numOfDocs;
+                        Folder.find({ _id: { $in: foldersList } })
+                            .populate("files")
+                            .then((folders) => {
+                                let filesList = [];
+
+                                folders.map((folder) => {
+                                    folder.files.map((file) => {
+                                        if (file.fileName.includes(params.fileName)) {
+                                            console.log(folder.files);
+                                            filesList.push(file);
+                                        }
+                                    })
+                                })
+                                res.json({ files: filesList, count: filesList.length });
+                            })
+                            .catch((err) => res.status(500).json("Error: " + err));
+                    });
+            })
+            .catch((err) => res.status(400).json("Error: " + err));
         return;
     }
 
@@ -368,89 +518,6 @@ router.post("/editDrawerNumber", VerifyToken, async function (req, res) {
             })
             .catch((err) => res.status(200).json({ message: err }));
     });
-});
-
-//get all the folders in data base by pagination
-router.get(
-    "/getFoldersPagination",
-    VerifyToken,
-    async function (req, res) {
-        let page = req.query.page;
-        let size = req.query.size;
-        let drawerId = req.query.drawerId;
-
-        if (!drawerId) {
-            res.json({ folder: null });
-        }
-        if (drawerId == "folders") {
-            Folder.count({}, function (error, numOfDocs) {
-                const limit = numOfDocs;
-
-                Folder.find()
-                    .populate("drawer")
-                    .populate("firstDateInUser")
-                    .populate("firstDateOutUser")
-                    .populate("lastDateInUser")
-                    .populate("lastDateOutUser")
-                    .skip(page * size - size)
-                    .limit(size)
-                    .then((folder) => {
-                        res.json({ folder: folder, count: limit });
-                    })
-                    .catch((err) => res.status(400).json("Error: " + err));
-            });
-            return;
-        }
-
-        if (page === undefined || size === undefined) {
-            page = 1;
-            size = 6;
-        }
-        Folder.find({ drawer: drawerId }).count({}, function (error, numOfDocs) {
-            const limit = numOfDocs;
-
-            Folder.find({ drawer: drawerId })
-                .populate("drawer")
-                .populate("firstDateInUser")
-                .populate("firstDateOutUser")
-                .populate("lastDateInUser")
-                .populate("lastDateOutUser")
-                .skip(page * size - size)
-                .limit(size)
-                .then((folder) => {
-                    res.json({ folder: folder, count: limit });
-                })
-                .catch((err) => res.status(400).json("Error: " + err));
-        });
-
-    }
-);
-
-
-router.get("/searchFolders", VerifyToken, async (req, res) => {
-    const params = req.query;
-    let page = req.query.page;
-    let size = req.query.size;
-    let drawerId = req.query.drawerId;
-
-    if (page === undefined || size === undefined) {
-        page = 1;
-        size = 6;
-    }
-    if (drawerId == "folders") {
-        const count = await Folder.find({ folderName: { $regex: params.folderName, $options: 'i' } }).count();
-        const result = await Folder.find({ folderName: { $regex: params.folderName, $options: 'i' } })
-            .skip(page * size - size)
-            .limit(size)
-        res.json({ folders: result, count: count });
-        return;
-    }
-
-    const count = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] }).count();
-    const result = await Folder.find({ $and: [{ drawer: drawerId }, { folderName: { $regex: params.folderName, $options: 'i' } }] })
-        .skip(page * size - size)
-        .limit(size)
-    res.json({ folders: result, count: count });
 });
 
 
