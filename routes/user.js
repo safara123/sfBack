@@ -234,34 +234,42 @@ router.get("/getFoldersPaginationPage", VerifyToken, async function (req, res) {
     let size = req.query.size;
     let folderName = req.query.folderName; // Add this line to get folderName parameter
 
-    if (page === undefined || size === undefined) {
-        page = 1;
-        size = 6;
+
+    try {
+        const userD = await User.findById(req.decoded.id).exec();
+        if (page === undefined || size === undefined) {
+            page = 1;
+            size = 6;
+        }
+
+        let filter = {}; // Initialize an empty filter object
+
+        if (folderName && folderName.trim() !== "") {
+            // If folderName is provided and not empty, create a regex pattern to match folders
+            filter = { folderName: { $regex: new RegExp(folderName, "i") } };
+        }
+
+        Folder.countDocuments(filter, function (error, numOfDocs) {
+            const limit = numOfDocs;
+            Folder.find(filter)
+                .populate("drawer")
+                .populate("firstDateInUser")
+                .populate("firstDateOutUser")
+                .populate("lastDateInUser")
+                .populate("lastDateOutUser")
+                .then((folders) => {
+                    const userDrawerAccess = userD?.drawersAccess || []; // Assuming userD.drawersAccess is an array of drawer IDs
+                    const filteredFolders = folders.filter(folder => {
+                        return userDrawerAccess.includes(folder?.drawer?._id.toString());
+                    });
+
+                    res.json({ folders: filteredFolders, count: filteredFolders.length });
+                })
+                .catch((err) => res.status(400).json("Error: " + err));
+        });
+    } catch (error) {
+        console.error(error);
     }
-
-    let filter = {}; // Initialize an empty filter object
-
-    if (folderName && folderName.trim() !== "") {
-        // If folderName is provided and not empty, create a regex pattern to match folders
-        filter = { folderName: { $regex: new RegExp(folderName, "i") } };
-    }
-
-    Folder.countDocuments(filter, function (error, numOfDocs) {
-        const limit = numOfDocs;
-
-        Folder.find(filter)
-            .populate("drawer")
-            .populate("firstDateInUser")
-            .populate("firstDateOutUser")
-            .populate("lastDateInUser")
-            .populate("lastDateOutUser")
-            .skip(page * size - size)
-            .limit(size)
-            .then((folders) => {
-                res.json({ folders: folders, count: limit });
-            })
-            .catch((err) => res.status(400).json("Error: " + err));
-    });
 });
 
 //get all the folders in data base by pagination
@@ -272,41 +280,51 @@ router.get(
         let page = req.query.page;
         let size = req.query.size;
         let fileName = req.query.fileName; // Add this line to get folderName parameter
+        try {
+            const userD = await User.findById(req.decoded.id).exec();
+            if (page === undefined || size === undefined) {
+                page = 1;
+                size = 6;
+            }
+            let filter = {}; // Initialize an empty filter object
 
-        if (page === undefined || size === undefined) {
-            page = 1;
-            size = 6;
+            if (fileName && fileName.trim() !== "") {
+                // If folderName is provided and not empty, create a regex pattern to match folders
+                filter = { fileName: { $regex: new RegExp(fileName, "i") } };
+            }
+
+            FileO.countDocuments(filter, function (error, numOfDocs) {
+                const limit = numOfDocs;
+
+                FileO.find(filter)
+                    .populate("folderId")
+                    .populate("firstDateInUser")
+                    .populate("firstDateOutUser")
+                    .populate("lastDateInUser")
+                    .populate("lastDateOutUser")
+                    .populate({
+                        path: 'folderId',
+                        populate: {
+                            path: 'drawer'
+                        }
+                    })
+                    .then((files) => {
+                        const userDrawerAccess = userD?.drawersAccess || []; // Assuming userD.drawersAccess is an array of drawer IDs
+                        const filteredFiles = files.filter(file => {
+                            return userDrawerAccess.includes(file?.folderId?.drawer?._id.toString());
+                        });
+
+
+                        res.json({ files: filteredFiles, count: filteredFiles.length });
+                    })
+                    .catch((err) => res.status(400).json("Error: " + err));
+            });
+        } catch (error) {
+            console.error(error);
         }
-        let filter = {}; // Initialize an empty filter object
 
-        if (fileName && fileName.trim() !== "") {
-            // If folderName is provided and not empty, create a regex pattern to match folders
-            filter = { fileName: { $regex: new RegExp(fileName, "i") } };
-        }
-
-        FileO.countDocuments(filter, function (error, numOfDocs) {
-            const limit = numOfDocs;
-
-            FileO.find(filter)
-                .populate("folderId")
-                .populate("firstDateInUser")
-                .populate("firstDateOutUser")
-                .populate("lastDateInUser")
-                .populate("lastDateOutUser")
-                .populate({
-                    path: 'folderId',
-                    populate: {
-                        path: 'drawer'
-                    }
-                })
-                .skip(page * size - size)
-                .limit(size)
-                .then((files) => {
-                    res.json({ files: files, count: limit });
-                })
-                .catch((err) => res.status(400).json("Error: " + err));
-        });
     }
+
 );
 
 
