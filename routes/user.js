@@ -258,9 +258,9 @@ router.get("/getFoldersPaginationPage", VerifyToken, async function (req, res) {
                 .populate("lastDateInUser")
                 .populate("lastDateOutUser")
                 .then((folders) => {
-                    const userDrawerAccess = userD ? userD.drawersAccess || [] : [];
+                    const userDrawerAccess = userD ? (userD.drawersAccess || []) : [];
                     const filteredFolders = folders.filter(folder => {
-                        return userDrawerAccess.includes(folder?.drawer?._id.toString());
+                        return userDrawerAccess.includes(folder && folder.drawer && folder.drawer._id && folder.drawer._id.toString());
                     });
 
                     res.json({ folders: filteredFolders, count: filteredFolders.length });
@@ -309,11 +309,11 @@ router.get(
                         }
                     })
                     .then((files) => {
-                        const userDrawerAccess = userD ? userD.drawersAccess || [] : [];
-                        const filteredFiles = files.filter(file => {
-                            return userDrawerAccess.includes(file?.folderId?.drawer?._id.toString());
-                        });
 
+                    const userDrawerAccess = userD ? (userD.drawersAccess || []) : [];
+                    const filteredFiles = files.filter(file => {
+                        return userDrawerAccess.includes(file && file.folderId && file.folderId.drawer && file.folderId.drawer._id && file.folderId.drawer._id.toString());
+                    });
 
                         res.json({ files: filteredFiles, count: filteredFiles.length });
                     })
