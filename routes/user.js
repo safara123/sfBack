@@ -258,7 +258,7 @@ router.get("/getFoldersPaginationPage", VerifyToken, async function (req, res) {
                 .populate("lastDateInUser")
                 .populate("lastDateOutUser")
                 .then((folders) => {
-                    const userDrawerAccess = userD?.drawersAccess || []; // Assuming userD.drawersAccess is an array of drawer IDs
+                    const userDrawerAccess = userD ? userD.drawersAccess || [] : [];
                     const filteredFolders = folders.filter(folder => {
                         return userDrawerAccess.includes(folder?.drawer?._id.toString());
                     });
@@ -309,7 +309,7 @@ router.get(
                         }
                     })
                     .then((files) => {
-                        const userDrawerAccess = userD?.drawersAccess || []; // Assuming userD.drawersAccess is an array of drawer IDs
+                        const userDrawerAccess = userD ? userD.drawersAccess || [] : [];
                         const filteredFiles = files.filter(file => {
                             return userDrawerAccess.includes(file?.folderId?.drawer?._id.toString());
                         });
